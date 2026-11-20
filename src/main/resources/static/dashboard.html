@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transporter Lane Assignment Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg-dark: #0f172a;
+      --card-dark: #1e293b;
+      --border-dark: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --accent: #8b5cf6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #090d16;
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-dark);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .logo-area { display: flex; align-items: center; gap: 0.75rem; }
+    .logo-badge {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: white;
+      font-weight: 800;
+      font-size: 1.1rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: 8px;
+      letter-spacing: -0.5px;
+    }
+    .logo-title { font-size: 1.25rem; font-weight: 700; color: #fff; }
+    .logo-subtitle { font-size: 0.75rem; color: var(--text-muted); }
+    .nav-links { display: flex; gap: 1rem; align-items: center; }
+    .nav-btn {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.875rem;
+      padding: 0.5rem 0.9rem;
+      border-radius: 6px;
+      border: 1px solid var(--border-dark);
+      background: rgba(15, 23, 42, 0.6);
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .nav-btn:hover { color: #fff; background: var(--border-dark); }
+    .container {
+      max-width: 1400px;
+      margin: 1.5rem auto;
+      padding: 0 1.5rem;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 480px 1fr;
+      gap: 1.5rem;
+      flex: 1;
+    }
+    @media (max-width: 1024px) {
+      .container { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: var(--card-dark);
+      border: 1px solid var(--border-dark);
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);
+    }
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .preset-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .preset-btn {
+      background: #0f172a;
+      border: 1px solid #3b82f640;
+      color: #93c5fd;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.45rem 0.75rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .preset-btn:hover, .preset-btn.active {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #2563eb;
+    }
+    .json-textarea {
+      width: 100%;
+      height: 380px;
+      background: #090d16;
+      color: #e2e8f0;
+      border: 1px solid var(--border-dark);
+      border-radius: 8px;
+      padding: 0.75rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.4;
+      resize: vertical;
+    }
+    .json-textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(37,99,235,0.25);
+    }
+    .controls-row {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      background: #0f172a;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-dark);
+    }
+    .controls-row label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      flex: 1;
+    }
+    .controls-row input {
+      width: 70px;
+      background: var(--card-dark);
+      border: 1px solid var(--border-dark);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: bold;
+      padding: 0.4rem 0.5rem;
+      text-align: center;
+      border-radius: 6px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: white;
+      font-weight: 700;
+      padding: 0.75rem 1.25rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 12px rgba(37,99,235,0.35);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #1d4ed8, #1e40af);
+      transform: translateY(-1px);
+    }
+    .btn-primary:active { transform: translateY(0); }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+    @media (max-width: 640px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+    }
+    .kpi-card {
+      background: #0f172a;
+      border: 1px solid var(--border-dark);
+      border-radius: 10px;
+      padding: 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600; }
+    .kpi-value { font-size: 1.6rem; font-weight: 800; color: #fff; margin-top: 0.25rem; }
+    .kpi-sub { font-size: 0.75rem; color: #38bdf8; margin-top: 0.25rem; }
+    .badge-optimal {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .badge-error {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .transporter-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .t-chip {
+      background: #3b82f61a;
+      border: 1px solid #3b82f655;
+      color: #93c5fd;
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid var(--border-dark);
+      border-radius: 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.85rem;
+    }
+    th {
+      background: #0f172a;
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-dark);
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.5px;
+    }
+    td {
+      padding: 0.8rem 1rem;
+      border-bottom: 1px solid #33415533;
+      color: #e2e8f0;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(51, 65, 85, 0.2); }
+    .lane-arrow { color: var(--primary); font-weight: bold; margin: 0 0.3rem; }
+    .quote-cost { font-weight: 700; color: #34d399; font-family: 'JetBrains Mono', monospace; }
+    .error-banner {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+      padding: 1rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+    .loading-spinner {
+      border: 3px solid rgba(255,255,255,0.2);
+      border-top: 3px solid #ffffff;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo-area">
+      <div class="logo-badge">LOGISTICS</div>
+      <div>
+        <div class="logo-title">Transporter Lane Assignment Engine</div>
+        <div class="logo-subtitle">Optimal Multi-Lane Combinatorial Allocation • Branch & Bound</div>
+      </div>
+    </div>
+    <div class="nav-links">
+      <a href="/swagger-ui.html" target="_blank" class="nav-btn">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+        Swagger OpenAPI Docs
+      </a>
+      <a href="/v3/api-docs" target="_blank" class="nav-btn">API JSON</a>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- LEFT PANEL: Input Configuration -->
+    <div class="card">
+      <div class="card-title">
+        <span>1. Input Configuration</span>
+        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">Lanes & Quotes</span>
+      </div>
+
+      <div class="preset-group">
+        <button class="preset-btn active" onclick="loadPreset('tc1')">Test Case 1 (5 Lanes)</button>
+        <button class="preset-btn" onclick="loadPreset('tc2')">Test Case 2 (Sparse)</button>
+        <button class="preset-btn" onclick="loadPreset('csv')">9 Lanes India</button>
+        <button class="preset-btn" onclick="loadPreset('tc10')">10 Lanes (Brief)</button>
+      </div>
+
+      <textarea id="jsonInput" class="json-textarea" spellcheck="false"></textarea>
+
+      <div class="controls-row">
+        <label for="maxTransporters">Max Transporters Allowed (N):</label>
+        <input type="number" id="maxTransporters" value="3" min="1" max="50">
+      </div>
+
+      <button id="solveBtn" class="btn-primary" onclick="executeOptimization()">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        <span>Submit & Run Optimizer</span>
+      </button>
+
+      <div id="inputMsg" style="font-size: 0.8rem; color: var(--text-muted); text-align: center;"></div>
+    </div>
+
+    <!-- RIGHT PANEL: Optimization Results -->
+    <div class="card" id="resultCard">
+      <div class="card-title">
+        <span>2. Optimal Allocation Results</span>
+        <span id="optimalBadge" class="badge-optimal">Ready</span>
+      </div>
+
+      <div id="errorView" class="error-banner" style="display: none;"></div>
+
+      <div id="successView">
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">Minimum Total Cost</div>
+            <div class="kpi-value" id="kpiTotalCost">₹0</div>
+            <div class="kpi-sub">Optimized across all lanes</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Transporters Selected</div>
+            <div class="kpi-value" id="kpiTransporterCount">0</div>
+            <div class="kpi-sub" id="kpiTransporterLimit">Limit: ≤ 3</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Algorithm Status</div>
+            <div class="kpi-value" id="kpiAlgo" style="font-size: 1.25rem; color: #34d399; margin-top: 0.5rem;">OPTIMAL</div>
+            <div class="kpi-sub">Global minimum proven</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 1rem;">
+          <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem;">
+            Selected Winning Transporters:
+          </div>
+          <div class="transporter-chips" id="selectedTransportersChips">
+            <span style="color: var(--text-muted); font-size: 0.8rem;">Run optimization to view selection</span>
+          </div>
+        </div>
+
+        <div style="margin-top: 1.5rem;">
+          <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.5rem;">
+            Lane-by-Lane Transporter Assignment:
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Lane ID</th>
+                  <th>Origin & Destination</th>
+                  <th>Assigned Transporter</th>
+                  <th>Winning Quote</th>
+                </tr>
+              </thead>
+              <tbody id="assignmentTableBody">
+                <tr>
+                  <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                    Click <strong>"Submit & Run Optimizer"</strong> to compute assignment.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const PRESETS = {
+      tc1: {
+        n: 3,
+        data: {
+          "lanes": [
+            {"id": 1, "origin": "Mumbai", "destination": "Delhi"},
+            {"id": 2, "origin": "Delhi", "destination": "Bangalore"},
+            {"id": 3, "origin": "Chennai", "destination": "Kolkata"},
+            {"id": 4, "origin": "Pune", "destination": "Hyderabad"},
+            {"id": 5, "origin": "Ahmedabad", "destination": "Jaipur"}
+          ],
+          "transporters": [
+            {"id": 1, "name": "Transporter T1", "laneQuotes": [{"laneId": 1, "quote": 20835}, {"laneId": 2, "quote": 10512}, {"laneId": 3, "quote": 22105}, {"laneId": 4, "quote": 42481}, {"laneId": 5, "quote": 19862}]},
+            {"id": 2, "name": "Transporter T2", "laneQuotes": [{"laneId": 1, "quote": 48844}, {"laneId": 2, "quote": 31326}, {"laneId": 3, "quote": 18640}, {"laneId": 4, "quote": 45828}, {"laneId": 5, "quote": 18297}]},
+            {"id": 3, "name": "Transporter T3", "laneQuotes": [{"laneId": 1, "quote": 39020}, {"laneId": 2, "quote": 20648}, {"laneId": 3, "quote": 31438}, {"laneId": 4, "quote": 36447}, {"laneId": 5, "quote": 12789}]},
+            {"id": 4, "name": "Transporter T4", "laneQuotes": [{"laneId": 1, "quote": 14400}, {"laneId": 2, "quote": 44514}, {"laneId": 3, "quote": 14316}, {"laneId": 4, "quote": 10678}, {"laneId": 5, "quote": 13032}]},
+            {"id": 5, "name": "Transporter T5", "laneQuotes": [{"laneId": 1, "quote": 11601}, {"laneId": 2, "quote": 19760}, {"laneId": 3, "quote": 40870}, {"laneId": 4, "quote": 20635}, {"laneId": 5, "quote": 26421}]},
+            {"id": 6, "name": "Transporter T6", "laneQuotes": [{"laneId": 1, "quote": 35095}, {"laneId": 2, "quote": 12494}, {"laneId": 3, "quote": 17808}, {"laneId": 4, "quote": 36210}, {"laneId": 5, "quote": 39444}]},
+            {"id": 7, "name": "Transporter T7", "laneQuotes": [{"laneId": 1, "quote": 26070}, {"laneId": 2, "quote": 41098}, {"laneId": 3, "quote": 20932}, {"laneId": 4, "quote": 16897}, {"laneId": 5, "quote": 27938}]}
+          ]
+        }
+      },
+      tc2: {
+        n: 2,
+        data: {
+          "lanes": [
+            {"id": 1, "origin": "Chandigarh", "destination": "Shimla"},
+            {"id": 2, "origin": "Agra", "destination": "Kanpur"},
+            {"id": 3, "origin": "Varanasi", "destination": "Gorakhpur"},
+            {"id": 4, "origin": "Amritsar", "destination": "Ludhiana"},
+            {"id": 5, "origin": "Coimbatore", "destination": "Madurai"}
+          ],
+          "transporters": [
+            {"id": 1, "name": "Transporter X", "laneQuotes": [{"laneId": 1, "quote": 1000}, {"laneId": 2, "quote": 1500}]},
+            {"id": 2, "name": "Transporter Y", "laneQuotes": [{"laneId": 3, "quote": 2000}, {"laneId": 4, "quote": 1800}]},
+            {"id": 3, "name": "Transporter Z", "laneQuotes": [{"laneId": 5, "quote": 1200}]},
+            {"id": 4, "name": "Transporter W", "laneQuotes": [{"laneId": 1, "quote": 1100}, {"laneId": 4, "quote": 1750}]}
+          ]
+        }
+      },
+      csv: {
+        n: 3,
+        data: {
+          "lanes": [
+            {"id": 1, "origin": "Mumbai", "destination": "Delhi"},
+            {"id": 2, "origin": "Delhi", "destination": "Bangalore"},
+            {"id": 3, "origin": "Chennai", "destination": "Kolkata"},
+            {"id": 4, "origin": "Pune", "destination": "Hyderabad"},
+            {"id": 5, "origin": "Ahmedabad", "destination": "Jaipur"},
+            {"id": 6, "origin": "Guwahati", "destination": "Shillong"},
+            {"id": 7, "origin": "Lucknow", "destination": "Patna"},
+            {"id": 8, "origin": "Ranchi", "destination": "Bhubaneswar"},
+            {"id": 9, "origin": "Surat", "destination": "Indore"}
+          ],
+          "transporters": [
+            {"id": 1, "name": "Transporter T1", "laneQuotes": [{"laneId": 1, "quote": 20835}, {"laneId": 2, "quote": 10512}, {"laneId": 3, "quote": 22105}, {"laneId": 4, "quote": 42481}, {"laneId": 5, "quote": 19862}, {"laneId": 6, "quote": 13567}, {"laneId": 7, "quote": 10015}, {"laneId": 8, "quote": 17886}, {"laneId": 9, "quote": 43996}]},
+            {"id": 2, "name": "Transporter T2", "laneQuotes": [{"laneId": 1, "quote": 48844}, {"laneId": 2, "quote": 31326}, {"laneId": 3, "quote": 18640}, {"laneId": 4, "quote": 45828}, {"laneId": 5, "quote": 18297}, {"laneId": 6, "quote": 45810}, {"laneId": 7, "quote": 49573}, {"laneId": 8, "quote": 45122}, {"laneId": 9, "quote": 31856}]},
+            {"id": 3, "name": "Transporter T3", "laneQuotes": [{"laneId": 1, "quote": 39020}, {"laneId": 2, "quote": 20648}, {"laneId": 3, "quote": 31438}, {"laneId": 4, "quote": 36447}, {"laneId": 5, "quote": 12789}, {"laneId": 6, "quote": 49985}, {"laneId": 7, "quote": 35285}, {"laneId": 8, "quote": 10281}, {"laneId": 9, "quote": 40092}]},
+            {"id": 4, "name": "Transporter T4", "laneQuotes": [{"laneId": 1, "quote": 14400}, {"laneId": 2, "quote": 44514}, {"laneId": 3, "quote": 14316}, {"laneId": 4, "quote": 10678}, {"laneId": 5, "quote": 13032}, {"laneId": 6, "quote": 46024}, {"laneId": 7, "quote": 42342}, {"laneId": 8, "quote": 35742}, {"laneId": 9, "quote": 48921}]},
+            {"id": 5, "name": "Transporter T5", "laneQuotes": [{"laneId": 1, "quote": 11601}, {"laneId": 2, "quote": 19760}, {"laneId": 3, "quote": 40870}, {"laneId": 4, "quote": 20635}, {"laneId": 5, "quote": 26421}, {"laneId": 6, "quote": 28809}, {"laneId": 7, "quote": 27815}, {"laneId": 8, "quote": 17024}, {"laneId": 9, "quote": 44691}]},
+            {"id": 6, "name": "Transporter T6", "laneQuotes": [{"laneId": 1, "quote": 35095}, {"laneId": 2, "quote": 12494}, {"laneId": 3, "quote": 17808}, {"laneId": 4, "quote": 36210}, {"laneId": 5, "quote": 39444}, {"laneId": 6, "quote": 29948}, {"laneId": 7, "quote": 17320}, {"laneId": 8, "quote": 10492}, {"laneId": 9, "quote": 37864}]},
+            {"id": 7, "name": "Transporter T7", "laneQuotes": [{"laneId": 1, "quote": 26070}, {"laneId": 2, "quote": 41098}, {"laneId": 3, "quote": 20932}, {"laneId": 4, "quote": 16897}, {"laneId": 5, "quote": 27938}, {"laneId": 6, "quote": 43517}, {"laneId": 7, "quote": 25881}, {"laneId": 8, "quote": 46136}, {"laneId": 9, "quote": 31286}]}
+          ]
+        }
+      },
+      tc10: {
+        n: 5,
+        data: {
+          "lanes": [
+            {"id": 1, "origin": "Mumbai", "destination": "Delhi"},
+            {"id": 2, "origin": "Delhi", "destination": "Bangalore"},
+            {"id": 3, "origin": "Chennai", "destination": "Kolkata"},
+            {"id": 4, "origin": "Pune", "destination": "Hyderabad"},
+            {"id": 5, "origin": "Ahmedabad", "destination": "Jaipur"},
+            {"id": 6, "origin": "Guwahati", "destination": "Shillong"},
+            {"id": 7, "origin": "Lucknow", "destination": "Patna"},
+            {"id": 8, "origin": "Ranchi", "destination": "Bhubaneswar"},
+            {"id": 9, "origin": "Surat", "destination": "Indore"},
+            {"id": 10, "origin": "Nagpur", "destination": "Raipur"}
+          ],
+          "transporters": [
+            {"id": 1, "name": "Transporter T1", "laneQuotes": [{"laneId": 1, "quote": 5000}, {"laneId": 2, "quote": 6000}]},
+            {"id": 2, "name": "Transporter T2", "laneQuotes": [{"laneId": 3, "quote": 7000}, {"laneId": 4, "quote": 4000}]},
+            {"id": 3, "name": "Transporter T3", "laneQuotes": [{"laneId": 5, "quote": 3000}, {"laneId": 6, "quote": 2000}]},
+            {"id": 4, "name": "Transporter T4", "laneQuotes": [{"laneId": 7, "quote": 8000}, {"laneId": 8, "quote": 5000}]},
+            {"id": 5, "name": "Transporter T5", "laneQuotes": [{"laneId": 9, "quote": 4500}, {"laneId": 10, "quote": 3500}]},
+            {"id": 6, "name": "Transporter T6", "laneQuotes": [{"laneId": 1, "quote": 5500}, {"laneId": 2, "quote": 6200}]},
+            {"id": 7, "name": "Transporter T7", "laneQuotes": [{"laneId": 3, "quote": 7500}, {"laneId": 4, "quote": 4500}]}
+          ]
+        }
+      }
+    };
+
+    function loadPreset(key) {
+      document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      const p = PRESETS[key];
+      document.getElementById('jsonInput').value = JSON.stringify(p.data, null, 2);
+      document.getElementById('maxTransporters').value = p.n;
+    }
+
+    // Load initial
+    loadPreset('tc1');
+
+    async function executeOptimization() {
+      const btn = document.getElementById('solveBtn');
+      const inputMsg = document.getElementById('inputMsg');
+      const successView = document.getElementById('successView');
+      const errorView = document.getElementById('errorView');
+      const optimalBadge = document.getElementById('optimalBadge');
+
+      btn.disabled = true;
+      btn.innerHTML = `<div class="loading-spinner"></div><span>Solving with Branch & Bound...</span>`;
+      inputMsg.textContent = 'Uploading lanes and quote matrix...';
+      errorView.style.display = 'none';
+
+      let inputPayload;
+      try {
+        inputPayload = JSON.parse(document.getElementById('jsonInput').value);
+      } catch (err) {
+        showError('Invalid JSON format: ' + err.message);
+        resetBtn();
+        return;
+      }
+
+      const maxN = parseInt(document.getElementById('maxTransporters').value, 10);
+      if (isNaN(maxN) || maxN < 1) {
+        showError('Max Transporters must be an integer greater than or equal to 1.');
+        resetBtn();
+        return;
+      }
+
+      try {
+        // Step 1: Submit input
+        const saveRes = await fetch('/api/v1/transporters/input', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(inputPayload)
+        });
+
+        const saveData = await saveRes.json();
+        if (!saveRes.ok) {
+          showError(`Input Rejected (${saveData.code || saveRes.status}): ${saveData.message}`);
+          resetBtn();
+          return;
+        }
+
+        inputMsg.textContent = 'Data saved. Calculating optimal combinatorial assignment...';
+
+        // Step 2: Request assignment
+        const assignRes = await fetch('/api/v1/transporters/assignment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ maxTransporters: maxN })
+        });
+
+        const assignData = await assignRes.json();
+        if (!assignRes.ok) {
+          showError(`Optimization Failed (${assignData.code || assignRes.status}):\n${assignData.message}`);
+          resetBtn();
+          return;
+        }
+
+        // Render success
+        renderResults(inputPayload, assignData, maxN);
+        inputMsg.textContent = 'Optimization solved successfully in real-time!';
+      } catch (networkErr) {
+        showError('Network error connecting to API: ' + networkErr.message);
+      } finally {
+        resetBtn();
+      }
+    }
+
+    function resetBtn() {
+      const btn = document.getElementById('solveBtn');
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg><span>Submit & Run Optimizer</span>`;
+    }
+
+    function showError(msg) {
+      const successView = document.getElementById('successView');
+      const errorView = document.getElementById('errorView');
+      const optimalBadge = document.getElementById('optimalBadge');
+
+      successView.style.display = 'none';
+      errorView.style.display = 'block';
+      errorView.innerHTML = `<strong>Feasibility / Validation Notice</strong><br><br>${msg.replace(/\n/g, '<br>')}`;
+      optimalBadge.className = 'badge-error';
+      optimalBadge.textContent = 'Infeasible / Error';
+    }
+
+    function renderResults(input, result, maxN) {
+      const successView = document.getElementById('successView');
+      const errorView = document.getElementById('errorView');
+      const optimalBadge = document.getElementById('optimalBadge');
+
+      errorView.style.display = 'none';
+      successView.style.display = 'block';
+
+      optimalBadge.className = result.optimal ? 'badge-optimal' : 'badge-optimal';
+      optimalBadge.textContent = result.optimal ? 'Global Optimum Verified' : 'Heuristic Solution';
+
+      document.getElementById('kpiTotalCost').textContent = '₹' + Number(result.totalCost).toLocaleString('en-IN');
+      document.getElementById('kpiTransporterCount').textContent = result.selectedTransporters.length;
+      document.getElementById('kpiTransporterLimit').textContent = `Constraint: ≤ ${maxN} transporters`;
+      document.getElementById('kpiAlgo').textContent = result.optimal ? 'OPTIMAL' : 'VALID';
+
+      // Transporter chips
+      const tMap = {};
+      input.transporters.forEach(t => { tMap[t.id] = t.name; });
+
+      const lMap = {};
+      input.lanes.forEach(l => { lMap[l.id] = l; });
+
+      const chipsContainer = document.getElementById('selectedTransportersChips');
+      chipsContainer.innerHTML = '';
+      result.selectedTransporters.forEach(tId => {
+        const chip = document.createElement('div');
+        chip.className = 't-chip';
+        chip.innerHTML = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg> <strong>${tMap[tId] || 'T' + tId}</strong> (ID: ${tId})`;
+        chipsContainer.appendChild(chip);
+      });
+
+      // Table rows
+      const tbody = document.getElementById('assignmentTableBody');
+      tbody.innerHTML = '';
+
+      // Find quotes for lane & assigned transporter
+      const quoteMap = {};
+      input.transporters.forEach(t => {
+        t.laneQuotes.forEach(q => {
+          quoteMap[`${q.laneId}_${t.id}`] = q.quote;
+        });
+      });
+
+      result.assignments.forEach(a => {
+        const lane = lMap[a.laneId] || { origin: 'Lane ' + a.laneId, destination: '' };
+        const tName = tMap[a.transporterId] || ('Transporter ' + a.transporterId);
+        const cost = quoteMap[`${a.laneId}_${a.transporterId}`] || '-';
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><strong style="color: #93c5fd;">#${a.laneId}</strong></td>
+          <td>
+            <strong>${lane.origin}</strong>
+            <span class="lane-arrow">➔</span>
+            <strong>${lane.destination}</strong>
+          </td>
+          <td>
+            <span class="t-chip" style="display: inline-flex; padding: 0.2rem 0.5rem; font-size: 0.75rem;">
+              ${tName} (ID: ${a.transporterId})
+            </span>
+          </td>
+          <td class="quote-cost">₹${Number(cost).toLocaleString('en-IN')}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+  </script>
+</body>
+</html>
